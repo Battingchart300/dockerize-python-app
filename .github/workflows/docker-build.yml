@@ -1,0 +1,28 @@
+name: Docker build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t dockerize-python-app .
+      - name: Run container and check it answers
+        run: |
+          docker run -d --name app -p 8000:8000 dockerize-python-app
+          for i in $(seq 1 15); do
+            if curl -fsS http://localhost:8000/ | grep -q "Hello from Docker!"; then
+              echo "App is up and answering"
+              docker stop app
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not answer in time"
+          docker logs app
+          docker stop app
+          exit 1
